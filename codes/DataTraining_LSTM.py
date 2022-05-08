@@ -15,9 +15,6 @@ def set_device():
     return device
 
 
-device = set_device()
-
-
 class LstmModel(torch.nn.Module): # 继承自 torch.nn.Module
     def __init__(self, input_dims, input_seq_length, output_dims, output_seq_length, h_dims, lstm_num_layers) -> None:
         super().__init__()
@@ -118,17 +115,27 @@ def train(input_dims, input_seq_length, output_dims, output_seq_length, pred_len
             optimizer.zero_grad()
             
             # 输出提示
+            '''
             if epoch == subepochs:
-                print('                       subepoch: {}/{}    train_loss: {}    test_loss: {}'.format(epoch, subepochs, loss, test_loss), end='\r')
+                print(
+                    '                       subepoch: {}/{}    train_loss: {} \t test_loss: {} \t {}'.format(
+                        epoch, subepochs,
+                        round(float(loss), 5), round(float(test_loss), 5),
+                        test_loss.to('cpu') / np.abs(y_label.detach().numpy().mean())
+                    ),
+                    end='\r'
+                )
                 print('                     ]\r ' + '='*int(finished*20/total_len) + '>\r[', end = '\r')
-
+            '''
             train_losses.append(float(loss.to('cpu').data))
             test_losses.append(float(test_loss.to('cpu').data))
 
         subepochs = int((subepochs_init+1)*((finished/total_len)*0.5+1))
         finished += 1
 
-    print()
+    model.to('cpu')
+    torch.save(model, './data/model/LSTM_{}*{}_{}*{}_{}_{}.pth'.format(input_dims, input_seq_length, output_dims, output_seq_length, h_dims, subepochs_init)) 
+
     return test_losses[-1]
 
 
@@ -138,28 +145,20 @@ def run():
 
 
 if __name__ == '__main__':
-    set_device()
+    device = set_device()
     df = pd.read_csv('./data/data/New_cases_normalized.csv')
-
-    final_losseses = []
-    for subepochs in [10, 100, 1000, 10000, 100000, 1000000]:
-        final_losses = []
-        for learning_rate in [0.1, 0.01, 0.001]:
-            print('train {} {}'.format(subepochs, learning_rate))
-            final_losses.append(train(
-                input_dims=228,
-                input_seq_length=56,
-                output_dims=228,
-                output_seq_length=28,
-                pred_length=7,
-                h_dims=912,
-                lstm_num_layers=2,
-                source=df,
-                subepochs_init=100,
-                learning_rate=learning_rate
-            ))
-        final_losseses.append(final_losses)
-    print()
-    for fl in final_losseses:
-        print(fl)
-
+    print(1)
+    for subepochs_init in np.logspace(7,9,3, base=2):
+        print('train {} '.format(subepochs_init))
+        print(train(
+            input_dims=223,
+            input_seq_length=56,
+            output_dims=223,
+            output_seq_length=28,
+            pred_length=7,
+            h_dims=223*4,
+            lstm_num_layers=2,
+            source=df,
+            subepochs_init=int(subepochs_init),
+            learning_rate=0.1,
+        ))
