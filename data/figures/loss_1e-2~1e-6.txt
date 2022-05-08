@@ -1,5 +1,0 @@
-lr 0.01: min_test_loss = 1.4378409385681152, epoch = 4000.0
-lr 0.001: min_test_loss = 1.430871844291687, epoch = 89000.0
-lr 0.0001: min_test_loss = 1.7772483825683594, epoch = 99000.0
-lr 1e-05: min_test_loss = 2.955686330795288, epoch = 99000.0
-lr 1e-06: min_test_loss = 2.988349676132202, epoch = 99000.0

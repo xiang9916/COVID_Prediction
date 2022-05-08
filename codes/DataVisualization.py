@@ -27,6 +27,7 @@ def clustering():
                 x1 = x[j]
                 res[i-2] = res[i-2]+sum((x1-c1)**2)
         plt.plot(np.arange(2, 20), res)
+        plt.xticks(np.arange(2, 20))
         # plt.xticks(np.arange(2, 20))
         plt.show()
         res_norm = (res - min(res)) / (max(res) - min(res))
@@ -58,7 +59,7 @@ def view_new_cases():
         cases = df[region]
         plt.plot(list(range(len(cases))), cases)
         plt.savefig('./data/figures/new_cases/{}.jpg'.format(region))
-        plt.show()
+        # plt.show()
 
 
 def view_cumulative_cases():
@@ -67,4 +68,4 @@ def view_cumulative_cases():
         cases = df[region]
         plt.plot(list(range(len(cases))), cases)
         plt.savefig('./data/figures/cumulative_cases/{}.jpg'.format(region))
-        plt.show()
+        # plt.show()
