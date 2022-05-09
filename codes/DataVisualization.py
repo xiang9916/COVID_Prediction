@@ -60,6 +60,7 @@ def view_new_cases():
         plt.plot(list(range(len(cases))), cases)
         plt.savefig('./data/figures/new_cases/{}.jpg'.format(region))
         # plt.show()
+        plt.cla()
 
 
 def view_cumulative_cases():
@@ -69,3 +70,4 @@ def view_cumulative_cases():
         plt.plot(list(range(len(cases))), cases)
         plt.savefig('./data/figures/cumulative_cases/{}.jpg'.format(region))
         # plt.show()
+        plt.cla()
