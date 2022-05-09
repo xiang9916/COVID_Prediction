@@ -28,7 +28,7 @@ def clustering():
                 res[i-2] = res[i-2]+sum((x1-c1)**2)
         plt.plot(np.arange(2, 20), res)
         plt.xticks(np.arange(2, 20))
-        # plt.xticks(np.arange(2, 20))
+        plt.savefig('./data/figures/countries_elbow_plot.jpg')
         plt.show()
         res_norm = (res - min(res)) / (max(res) - min(res))
         return res_norm
