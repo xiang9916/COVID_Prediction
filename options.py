@@ -1,4 +1,3 @@
-
 import warnings
 
 from codes import DataDownloading, DataExtraction, DataVisualization
@@ -10,6 +9,7 @@ display = "\
     [1] Download COVID-19 data from github\n\
     [2] Extract sequences from downloaded data\n\
     [3] Visualize Cases Data\n\
+    [4] Visualize Models Data\n\
     choose an option:\
 "
 
@@ -27,3 +27,6 @@ if option == '0' or option == '3':
     DataVisualization.view_new_cases()
     print('Exporting Cumulative Cases Plot ...')
     DataVisualization.view_cumulative_cases()
+if option == '0' or option == '4':
+    from codes.DataVisualization import LstmModel
+    DataVisualization.model_compare()

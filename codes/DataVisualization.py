@@ -1,13 +1,65 @@
-from turtle import circle
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 import pandas as pd
+import torch
 
 from sklearn.cluster import KMeans
 from sklearn.manifold import TSNE
 
 plt.rcParams["font.sans-serif"]=["SimHei"]
 plt.rcParams["axes.unicode_minus"]=False
+
+class LstmModel(torch.nn.Module): # 继承自 torch.nn.Module
+    def __init__(self, input_dims, input_seq_length, output_dims, output_seq_length, h_dims, lstm_num_layers) -> None:
+        super().__init__()
+        self.input_dims = input_dims
+        self.input_seq_length = input_seq_length
+        self.output_dims = output_dims
+        self.output_seq_length = output_seq_length
+        self.h_dims = h_dims
+        self.lstm_num_layers = lstm_num_layers
+
+        self.hidden_cell = (
+            torch.zeros(self.lstm_num_layers, self.h_dims).to('cpu'),
+            torch.zeros(self.lstm_num_layers, self.h_dims).to('cpu')
+        )
+
+        # 神经网络包括5个层
+        self.lstm1 = torch.nn.LSTM(
+            input_size = self.input_dims,
+            hidden_size = self.h_dims,
+            num_layers = self.lstm_num_layers
+        )
+        self.linear1 = torch.nn.Linear(
+            in_features = self.input_seq_length,
+            out_features = self.output_seq_length
+        )
+        self.linear2 = torch.nn.Linear(
+            in_features = self.h_dims,
+            out_features = self.h_dims
+        )
+        self.relu = torch.nn.ReLU()
+        self.linear3 = torch.nn.Linear(
+            in_features = self.h_dims,
+            out_features = self.output_dims
+        )
+
+    def forward(self, x):
+        y1, self.hidden_cell = self.lstm1(x, self.hidden_cell)
+        # y2 = torch.t(self.linear1(torch.t(y1.view(self.input_dims, self.h_dims))))
+        y2 = y1[-self.output_seq_length:, :]
+        y3 = self.linear2(y2)
+        y4 = self.relu(y3)
+        y5 = self.linear3(y4)
+        return y5
+
+    def init_hidden_cell(self):
+        self.hidden_cell = (
+            torch.zeros(self.lstm_num_layers, self.h_dims).to('cpu'),
+            torch.zeros(self.lstm_num_layers, self.h_dims).to('cpu')
+        )
+
 
 def clustering():
     df = pd.read_csv('./data/data/New_cases_normalized.csv')
@@ -89,6 +141,20 @@ def clustering():
     plt.title("Clustering Plot")
     plt.savefig('./data/figures/countries_clustering.jpg')
     plt.show()
+
+
+def model_compare():
+    pytorch_models = os.listdir('./data/model/')
+    models = {}
+    for i in pytorch_models:
+        models[i] = torch.load('./data/model/{}'.format(i), map_location='cpu')
+    
+    for model in models:
+        pass
+
+
+def model_run():
+    return
 
 
 def view_new_cases():
