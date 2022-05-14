@@ -46,7 +46,7 @@ class LstmModel(torch.nn.Module): # 继承自 torch.nn.Module
         )
 
     def forward(self, x):
-        y1, self.hidden_cell = self.lstm1(x, self.hidden_cell)
+        y1, self.hidden_cell = self.lstm1(x.view(self.input_seq_length, self.input_dims), self.hidden_cell)
         # y2 = torch.t(self.linear1(torch.t(y1.view(self.input_dims, self.h_dims))))
         y2 = y1[-self.output_seq_length:, :]
         y3 = self.linear2(y2)
@@ -149,11 +149,26 @@ def model_compare():
     for i in pytorch_models:
         models[i] = torch.load('./data/model/{}'.format(i), map_location='cpu')
     
-    for model in models:
+    for i in models:
+        model = models[i]
+        print(i)
+        print(model_run(model))
+
+
+def model_run(model):
+    df = pd.read_csv('./data/data/New_cases_normalized.csv')
+    if model.input_dims == 1:
+        input_seq = torch.from_numpy(np.array(df['United States of America'][-model.input_seq_length-7:-7])).to(torch.float32)
+        model.init_hidden_cell()
+        output_seq = model(input_seq)
+
+        output = output_seq.detach().numpy().T
+        mean = pd.read_pickle('./data/data/df_new.mean().pkl')['United States of America']
+        std = pd.read_pickle('./data/data/df_new.std().pkl')['United States of America']
+        res = output * std + mean
+        return res
+    else:
         pass
-
-
-def model_run():
     return
 
 
