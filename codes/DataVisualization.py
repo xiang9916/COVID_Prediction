@@ -1,3 +1,4 @@
+from cProfile import label
 import matplotlib.pyplot as plt
 import numpy as np
 import os
@@ -6,6 +7,8 @@ import torch
 
 from sklearn.cluster import KMeans
 from sklearn.manifold import TSNE
+
+from codes import Dynamic_Model
 
 plt.rcParams["font.sans-serif"]=["SimHei"]
 plt.rcParams["axes.unicode_minus"]=False
@@ -145,14 +148,24 @@ def clustering():
 
 def model_compare():
     pytorch_models = os.listdir('./data/model/')
+    pytorch_models = []
+    pytorch_models += ['LSTM_223_56_223_28_892_128.pth', 'LSTM_223_56_223_28_892_512.pth', 'singleLSTM_1_56_1_28_4_128.pth']
     models = {}
     for i in pytorch_models:
         models[i] = torch.load('./data/model/{}'.format(i), map_location='cpu')
     
+    df = pd.read_csv('./data/data/New_cases_normalized.csv')
     for i in models:
         model = models[i]
         print(i)
-        print(model_run(model))
+        plt.plot(np.arange(7), model_run(model)[:7], label=i)
+    plt.plot(np.arange(7), Dynamic_Model.main(-7,7), label='Dynamic_Model')
+    mean = pd.read_pickle('./data/data/df_new.mean().pkl')['United States of America']
+    std = pd.read_pickle('./data/data/df_new.std().pkl')['United States of America']
+    output_seq = df['United States of America'][-7:]
+    plt.plot(np.arange(7), (output_seq * std + mean), label='cases')
+    plt.legend()
+    plt.show()
 
 
 def model_run(model):
@@ -166,10 +179,19 @@ def model_run(model):
         mean = pd.read_pickle('./data/data/df_new.mean().pkl')['United States of America']
         std = pd.read_pickle('./data/data/df_new.std().pkl')['United States of America']
         res = output * std + mean
-        return res
+        return res[0]
     else:
-        pass
-    return
+        input_seq = torch.from_numpy(np.array(df[-model.input_seq_length-7:-7])).to(torch.float32)
+        model.init_hidden_cell()
+        output_seq = model(input_seq)
+
+        output = output_seq.detach().numpy().T
+        mean = pd.read_pickle('./data/data/df_new.mean().pkl')['United States of America']
+        std = pd.read_pickle('./data/data/df_new.std().pkl')['United States of America']
+        res = output * std + mean
+        regions = list(df.columns)
+        i = regions.index('United States of America')
+    return res[i]
 
 
 def view_new_cases():

@@ -65,7 +65,7 @@ def main(start, length):
     us = df['United States of America']
     us_len = len(us)
     training_data = np.array(us[:start])
-    label = np.array(us[start:start+length])
+    label = np.array(us[start:(start+length if start+length<0 else None)])
 
     beta = 0.11
     delta = 1
@@ -115,8 +115,8 @@ def main(start, length):
             C += dC
             R += dR
         pred = np.append(pred, [dI_sum])
-        # print(label)
-    # print(criterion(pred, label))
+        print(label)
+    print(criterion(pred, label))
     return pred
 
 
