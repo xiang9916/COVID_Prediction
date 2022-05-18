@@ -1,4 +1,5 @@
 from cProfile import label
+import re
 import matplotlib.pyplot as plt
 import numpy as np
 import os
@@ -148,8 +149,8 @@ def clustering():
 
 def model_compare():
     pytorch_models = os.listdir('./data/model/')
-    pytorch_models = []
-    pytorch_models += ['LSTM_223_56_223_28_892_128.pth', 'LSTM_223_56_223_28_892_512.pth', 'singleLSTM_1_56_1_28_4_128.pth']
+    # pytorch_models = []
+    # pytorch_models += ['LSTM_223_56_223_28_892_128.pth', 'LSTM_223_56_223_28_892_512.pth', 'singleLSTM_1_56_1_28_4_128.pth']
     models = {}
     for i in pytorch_models:
         models[i] = torch.load('./data/model/{}'.format(i), map_location='cpu')
@@ -158,23 +159,45 @@ def model_compare():
     for i in models:
         model = models[i]
         print(i)
-        plt.plot(np.arange(7), model_run(model)[:7], label=i)
-    plt.plot(np.arange(7), Dynamic_Model.main(-7,7), label='Dynamic_Model')
+        res = []
+        period = 1
+        def MA(lst):
+            res = []
+            for i in range(len(lst)):
+                s = []
+                n = 0
+                if i-2 >= 0: s.append(lst[i-2]); n+=1
+                if i-1 >= 0: s.append(lst[i-1]); n+=1
+                s.append(lst[i-1]); n+=1
+                if i+1 < len(lst): s.append(lst[i+1]); n+=1
+                if i+2 < len(lst): s.append(lst[i+2]); n+=1
+                res.append(sum(s)/n)
+            return res
+        
+        
+        for j in range(period):
+            res.extend(model_run(model, df[:-7*(period-j)])[:7])
+        plt.plot(np.arange(period*7), res, label=i)
+    res = []
+    for j in range(period):
+        res.extend(Dynamic_Model.main(-7*(period-j),7))
+    plt.plot(np.arange(period*7), MA(MA(MA(res))), label='Dynamic_Model')
     mean = pd.read_pickle('./data/data/df_new.mean().pkl')['United States of America']
     std = pd.read_pickle('./data/data/df_new.std().pkl')['United States of America']
-    output_seq = df['United States of America'][-7:]
-    plt.plot(np.arange(7), (output_seq * std + mean), label='cases')
+    output_seq = df['United States of America'][-period*7:]
+    plt.plot(np.arange(period*7), (output_seq * std + mean), label='cases')
     plt.legend()
+    plt.title("New cases and predictions of new cases in the US")
+    plt.xlabel('cases')
+    plt.ylabel("date")
     plt.show()
 
 
-def model_run(model):
-    df = pd.read_csv('./data/data/New_cases_normalized.csv')
+def model_run(model, df):
     if model.input_dims == 1:
         input_seq = torch.from_numpy(np.array(df['United States of America'][-model.input_seq_length-7:-7])).to(torch.float32)
         model.init_hidden_cell()
         output_seq = model(input_seq)
-
         output = output_seq.detach().numpy().T
         mean = pd.read_pickle('./data/data/df_new.mean().pkl')['United States of America']
         std = pd.read_pickle('./data/data/df_new.std().pkl')['United States of America']
@@ -184,7 +207,6 @@ def model_run(model):
         input_seq = torch.from_numpy(np.array(df[-model.input_seq_length-7:-7])).to(torch.float32)
         model.init_hidden_cell()
         output_seq = model(input_seq)
-
         output = output_seq.detach().numpy().T
         mean = pd.read_pickle('./data/data/df_new.mean().pkl')['United States of America']
         std = pd.read_pickle('./data/data/df_new.std().pkl')['United States of America']

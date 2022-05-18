@@ -115,8 +115,8 @@ def main(start, length):
             C += dC
             R += dR
         pred = np.append(pred, [dI_sum])
-        print(label)
-    print(criterion(pred, label))
+        # print(label)
+    # print(criterion(pred, label))
     return pred
 
 
