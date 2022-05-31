@@ -1,13 +1,13 @@
-from cProfile import label
-import re
 import matplotlib.pyplot as plt
 import numpy as np
 import os
 import pandas as pd
 import torch
 
+from scipy import stats
 from sklearn.cluster import KMeans
 from sklearn.manifold import TSNE
+from sklearn.metrics import mean_squared_error
 
 from codes import Dynamic_Model
 
@@ -155,42 +155,38 @@ def model_compare():
     for i in pytorch_models:
         models[i] = torch.load('./data/model/{}'.format(i), map_location='cpu')
     
+    results = []
     df = pd.read_csv('./data/data/New_cases_normalized.csv')
     for i in models:
         model = models[i]
         print(i)
         res = []
-        period = 1
-        def MA(lst):
-            res = []
-            for i in range(len(lst)):
-                s = []
-                n = 0
-                if i-2 >= 0: s.append(lst[i-2]); n+=1
-                if i-1 >= 0: s.append(lst[i-1]); n+=1
-                s.append(lst[i-1]); n+=1
-                if i+1 < len(lst): s.append(lst[i+1]); n+=1
-                if i+2 < len(lst): s.append(lst[i+2]); n+=1
-                res.append(sum(s)/n)
-            return res
-        
-        
+        period = 1 
         for j in range(period):
             res.extend(model_run(model, df[:-7*(period-j)])[:7])
-        plt.plot(np.arange(period*7), res, label=i)
+        plt.plot(np.arange(period*7), np.array(res), label=i)
+        results.append(np.array(res))
     res = []
     for j in range(period):
         res.extend(Dynamic_Model.main(-7*(period-j),7))
-    plt.plot(np.arange(period*7), MA(MA(MA(res))), label='Dynamic_Model')
+    plt.plot(np.arange(period*7), np.array(res), label='Dynamic_Model')
+    results.append(np.array(res))
     mean = pd.read_pickle('./data/data/df_new.mean().pkl')['United States of America']
     std = pd.read_pickle('./data/data/df_new.std().pkl')['United States of America']
     output_seq = df['United States of America'][-period*7:]
-    plt.plot(np.arange(period*7), (output_seq * std + mean), label='cases')
+    label = output_seq * std + mean
+    plt.plot(np.arange(period*7), label, label='cases')
     plt.legend()
     plt.title("New cases and predictions of new cases in the US")
     plt.xlabel('cases')
     plt.ylabel("date")
     plt.show()
+
+    for r in results:
+        r = np.array(r)
+        label = np.array(label)
+        print(stats.wilcoxon(r, label))
+        print(mean_squared_error(label, r))
 
 
 def model_run(model, df):
